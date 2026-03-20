@@ -1,0 +1,24 @@
+import apiClient from "../api/axios";
+
+export async function listTournaments() {
+  const response = await apiClient.get("/tournaments");
+  return response.data.data;
+}
+
+export async function getTournamentDetails(tournamentId) {
+  const response = await apiClient.get(`/tournaments/${tournamentId}`);
+  return response.data.data;
+}
+
+export async function createTournament(payload) {
+  const response = await apiClient.post("/tournaments", payload);
+  return response.data.data;
+}
+
+export async function updateFixtureResult(tournamentId, fixtureId, payload) {
+  const response = await apiClient.patch(
+    `/tournaments/${tournamentId}/fixtures/${fixtureId}`,
+    payload
+  );
+  return response.data.data;
+}
