@@ -1,18 +1,18 @@
 import { NavLink } from "react-router-dom";
-import brandMark from "../assets/fieldpulse-mark.svg";
+import brandMark from "../assets/fieldpulse-mark.png";
 
 function RoleNav({ role }) {
   const isAdmin = role === "admin";
   const viewerLinks = [
-    { to: "/home", label: "Home" },
-    { to: "/tournaments", label: "Tournaments" },
-    { to: "/live-score", label: "Match Center" },
+    { to: "/home", label: "Dashboard" },
+    { to: "/tournaments", label: "Tournament" },
+    { to: "/live-score", label: "Live Score" },
   ];
   const adminLinks = [
-    { to: "/admin", label: "Admin Home", end: true },
-    { to: "/admin/tournaments", label: "Admin Tournaments" },
+    { to: "/admin", label: "Start Here", end: true },
+    { to: "/admin/tournaments", label: "Tournament Setup" },
     { to: "/admin/match-setup", label: "Match Setup" },
-    { to: "/admin/live-score", label: "Admin Score" },
+    { to: "/admin/live-score", label: "Scoring Desk" },
   ];
 
   return (
@@ -41,11 +41,11 @@ function RoleNav({ role }) {
       <div className="nav-group nav-group-secondary">
         {isAdmin ? (
           <NavLink to="/home" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
-            Viewer Home
+            Switch To Viewer
           </NavLink>
         ) : (
           <NavLink to="/admin" className={({ isActive }) => `nav-link${isActive ? " active" : ""}`}>
-            Admin
+            Switch To Admin
           </NavLink>
         )}
       </div>

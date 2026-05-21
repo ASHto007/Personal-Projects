@@ -1,5 +1,5 @@
 import { Link, useOutletContext } from "react-router-dom";
-import brandMark from "../../assets/fieldpulse-mark.svg";
+import brandMark from "../../assets/fieldpulse-mark.png";
 
 function HomeTournamentSection() {
   const { currentTournament, formatDisplayDate } = useOutletContext();

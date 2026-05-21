@@ -7,8 +7,15 @@ import {
   updateCurrentMatchPlayers,
   updateCurrentMatchScore,
 } from "../services/matchService";
-import liveMatchHero from "../assets/live-match-hero.svg";
+import liveMatchHero from "../assets/live-match-hero.png";
 import RoleNav from "../components/RoleNav";
+import {
+  buildUniquePlayerOptions,
+  buildScorePayload,
+  createDefaultEventForm,
+  normalizeSquadOptions,
+  WICKET_TYPE_OPTIONS,
+} from "../components/match/scoringFormUtils";
 
 function getCurrentInnings(match) {
   return match?.innings?.find((innings) => innings.number === match.currentInnings) || null;
@@ -55,10 +62,9 @@ function LiveScorePage({ mode = "viewer" }) {
     nonStriker: "",
     bowler: "",
   });
-  const [eventForm, setEventForm] = useState({
-    type: "run",
-    runs: 1,
-  });
+  const [eventForm, setEventForm] = useState(createDefaultEventForm);
+  const [showAdvancedScoring, setShowAdvancedScoring] = useState(false);
+  const [extraRunMode, setExtraRunMode] = useState("");
 
   function syncForms(response) {
     const activeInnings = getCurrentInnings(response);
@@ -119,6 +125,43 @@ function LiveScorePage({ mode = "viewer" }) {
     }
   }
 
+  async function submitQuickEvent(payload) {
+    setExtraRunMode("");
+    await applyAction(() => updateCurrentMatchScore(payload));
+  }
+
+  function toggleExtraRunMode(type) {
+    setExtraRunMode((currentValue) => (currentValue === type ? "" : type));
+  }
+
+  function getExtraRunModeLabel(type) {
+    if (type === "wide") {
+      return "Wide With Extra Runs";
+    }
+
+    if (type === "noBall") {
+      return "No Ball With Bat Runs";
+    }
+
+    if (type === "bye") {
+      return "Bye Runs";
+    }
+
+    if (type === "legBye") {
+      return "Leg Bye Runs";
+    }
+
+    return "Extra Runs";
+  }
+
+  function getExtraRunModeOptions(type) {
+    if (type === "noBall") {
+      return [1, 2, 3, 4, 6];
+    }
+
+    return [1, 2, 3, 4];
+  }
+
   function handleEventChange(event) {
     const { name, value } = event.target;
 
@@ -130,7 +173,7 @@ function LiveScorePage({ mode = "viewer" }) {
 
   async function handleEventSubmit(event) {
     event.preventDefault();
-    await applyAction(() => updateCurrentMatchScore(eventForm));
+    await applyAction(() => updateCurrentMatchScore(buildScorePayload(eventForm)));
   }
 
   function handlePlayerChange(event) {
@@ -164,6 +207,24 @@ function LiveScorePage({ mode = "viewer" }) {
   const currentInnings = getCurrentInnings(match);
   const firstInnings = match?.innings?.[0];
   const secondInnings = match?.innings?.[1];
+  const battingSquadOptions = normalizeSquadOptions(match?.teamSquads, currentInnings?.battingTeam);
+  const bowlingSquadOptions = normalizeSquadOptions(match?.teamSquads, currentInnings?.bowlingTeam);
+  const batterOptions = buildUniquePlayerOptions(
+    currentInnings?.players?.striker,
+    currentInnings?.players?.nonStriker,
+    ...battingSquadOptions,
+  );
+  const bowlerOptions = buildUniquePlayerOptions(
+    currentInnings?.players?.currentBowler,
+    ...bowlingSquadOptions,
+  );
+  const secondInningsBatters = buildUniquePlayerOptions(
+    ...normalizeSquadOptions(match?.teamSquads, secondInnings?.battingTeam),
+  );
+  const secondInningsBowlers = buildUniquePlayerOptions(
+    ...normalizeSquadOptions(match?.teamSquads, secondInnings?.bowlingTeam),
+  );
+  const needsNewBowler = currentInnings?.requiresNewBowler === true;
 
   return (
     <main className="app-shell">
@@ -309,15 +370,20 @@ function LiveScorePage({ mode = "viewer" }) {
 
         {isAdmin && status === "ready" && currentInnings?.status === "live" ? (
           <section className="sidebar-card">
-            <h3>Change Players</h3>
+            <h3>Players Control</h3>
+            {needsNewBowler ? (
+              <p className="form-error">Over complete. Select the next bowler before scoring the next ball.</p>
+            ) : null}
             <form className="player-grid" onSubmit={handlePlayerSubmit}>
               <label className="field-group">
                 <span>Striker</span>
                 <input
                   type="text"
                   name="striker"
+                  list="live-score-batters"
                   value={playerForm.striker}
                   onChange={handlePlayerChange}
+                  placeholder="Select or type striker"
                 />
               </label>
               <label className="field-group">
@@ -325,8 +391,10 @@ function LiveScorePage({ mode = "viewer" }) {
                 <input
                   type="text"
                   name="nonStriker"
+                  list="live-score-batters"
                   value={playerForm.nonStriker}
                   onChange={handlePlayerChange}
+                  placeholder="Select or type non-striker"
                 />
               </label>
               <label className="field-group">
@@ -334,8 +402,10 @@ function LiveScorePage({ mode = "viewer" }) {
                 <input
                   type="text"
                   name="currentBowler"
+                  list="live-score-bowlers"
                   value={playerForm.currentBowler}
                   onChange={handlePlayerChange}
+                  placeholder="Select or type bowler"
                 />
               </label>
               <button type="submit" className="secondary-button" disabled={isUpdating}>
@@ -347,100 +417,302 @@ function LiveScorePage({ mode = "viewer" }) {
 
         {isAdmin && status === "ready" && currentInnings?.status === "live" ? (
           <section className="sidebar-card">
-            <h3>Update Score</h3>
-            <div className="scoring-grid">
-              <button
-                type="button"
-                className="primary-button"
-                disabled={isUpdating}
-                onClick={() => applyAction(() => updateCurrentMatchScore({ type: "run", runs: 0 }))}
-              >
-                Dot Ball
-              </button>
-              <button
-                type="button"
-                className="primary-button"
-                disabled={isUpdating}
-                onClick={() => applyAction(() => updateCurrentMatchScore({ type: "run", runs: 1 }))}
-              >
-                +1 Run
-              </button>
-              <button
-                type="button"
-                className="primary-button"
-                disabled={isUpdating}
-                onClick={() => applyAction(() => updateCurrentMatchScore({ type: "run", runs: 4 }))}
-              >
-                Four
-              </button>
-              <button
-                type="button"
-                className="primary-button"
-                disabled={isUpdating}
-                onClick={() => applyAction(() => updateCurrentMatchScore({ type: "run", runs: 6 }))}
-              >
-                Six
-              </button>
-              <button
-                type="button"
-                className="danger-button"
-                disabled={isUpdating}
-                onClick={() => applyAction(() => updateCurrentMatchScore({ type: "wicket" }))}
-              >
-                Wicket
-              </button>
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={isUpdating}
-                onClick={() => applyAction(() => undoLastBall())}
-              >
-                Undo Last Ball
-              </button>
-              <button
-                type="button"
-                className="secondary-button"
-                disabled={isUpdating}
-                onClick={() => applyAction(() => completeCurrentInnings())}
-              >
-                Complete Innings
-              </button>
+            <h3>Scoring Console</h3>
+            <div className="scoring-stack">
+              <div>
+                <p className="scoring-label">Runs</p>
+                <div className="quick-score-grid">
+                  {[0, 1, 2, 3, 4, 6].map((runValue) => (
+                    <button
+                      key={runValue}
+                      type="button"
+                      className="primary-button"
+                      disabled={isUpdating || needsNewBowler}
+                      onClick={() => submitQuickEvent({ type: "run", runs: runValue })}
+                    >
+                      {runValue === 0 ? "Dot" : `+${runValue}`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <p className="scoring-label">Extras</p>
+                <div className="quick-score-grid">
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={isUpdating || needsNewBowler}
+                    onClick={() => submitQuickEvent({ type: "wide", runs: 0 })}
+                  >
+                    Wide
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={isUpdating || needsNewBowler}
+                    onClick={() => toggleExtraRunMode("wide")}
+                  >
+                    Wide +
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={isUpdating || needsNewBowler}
+                    onClick={() => submitQuickEvent({ type: "noBall", runs: 0 })}
+                  >
+                    No Ball
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={isUpdating || needsNewBowler}
+                    onClick={() => toggleExtraRunMode("noBall")}
+                  >
+                    NB +
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={isUpdating || needsNewBowler}
+                    onClick={() => submitQuickEvent({ type: "bye", runs: 1 })}
+                  >
+                    Bye
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={isUpdating || needsNewBowler}
+                    onClick={() => toggleExtraRunMode("bye")}
+                  >
+                    Bye +
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={isUpdating || needsNewBowler}
+                    onClick={() => submitQuickEvent({ type: "legBye", runs: 1 })}
+                  >
+                    Leg Bye
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={isUpdating || needsNewBowler}
+                    onClick={() => toggleExtraRunMode("legBye")}
+                  >
+                    LBye +
+                  </button>
+                  <button
+                    type="button"
+                    className="danger-button"
+                    disabled={isUpdating || needsNewBowler}
+                    onClick={() =>
+                      setEventForm((currentValue) => ({
+                        ...createDefaultEventForm(),
+                        type: "wicket",
+                        wicketType: currentValue.wicketType,
+                        dismissedBatter: currentValue.dismissedBatter,
+                      }))
+                    }
+                  >
+                    Wicket
+                  </button>
+                  <button
+                    type="button"
+                    className="secondary-button"
+                    disabled={isUpdating}
+                    onClick={() => setShowAdvancedScoring((currentValue) => !currentValue)}
+                  >
+                    {showAdvancedScoring ? "Hide Manual" : "Manual Entry"}
+                  </button>
+                </div>
+              </div>
+
+              {extraRunMode ? (
+                <div className="extra-console">
+                  <p className="scoring-label">{getExtraRunModeLabel(extraRunMode)}</p>
+                  <div className="quick-score-grid">
+                    {getExtraRunModeOptions(extraRunMode).map((runValue) => (
+                      <button
+                        key={`${extraRunMode}-${runValue}`}
+                        type="button"
+                        className="secondary-button"
+                        disabled={isUpdating || needsNewBowler}
+                        onClick={() => submitQuickEvent({ type: extraRunMode, runs: runValue })}
+                      >
+                        +{runValue}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      className="secondary-button"
+                      disabled={isUpdating}
+                      onClick={() => setExtraRunMode("")}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              ) : null}
+
+              <div className="quick-score-grid">
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={isUpdating}
+                  onClick={() => applyAction(() => undoLastBall())}
+                >
+                  Undo Last Ball
+                </button>
+                <button
+                  type="button"
+                  className="secondary-button"
+                  disabled={isUpdating}
+                  onClick={() => applyAction(() => completeCurrentInnings())}
+                >
+                  Complete Innings
+                </button>
+              </div>
             </div>
 
-            <form className="event-grid" onSubmit={handleEventSubmit}>
-              <label className="field-group">
-                <span>Event Type</span>
-                <select
-                  name="type"
-                  value={eventForm.type}
-                  onChange={handleEventChange}
-                >
-                  <option value="run">Run</option>
-                  <option value="wide">Wide</option>
-                  <option value="noBall">No Ball</option>
-                  <option value="bye">Bye</option>
-                  <option value="legBye">Leg Bye</option>
-                  <option value="wicket">Wicket</option>
-                </select>
-              </label>
+            {eventForm.type === "wicket" ? (
+              <form className="event-grid wicket-console" onSubmit={handleEventSubmit}>
+                <label className="field-group">
+                  <span>Wicket Type</span>
+                    <select
+                      name="wicketType"
+                      value={eventForm.wicketType}
+                      onChange={handleEventChange}
+                    >
+                    {WICKET_TYPE_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                </label>
 
-              <label className="field-group">
-                <span>Runs</span>
-                <input
-                  type="number"
-                  name="runs"
-                  min="0"
-                  max="6"
-                  value={eventForm.runs}
-                  onChange={handleEventChange}
-                  disabled={eventForm.type === "wicket"}
-                />
-              </label>
+                <label className="field-group">
+                  <span>Dismissed Batter</span>
+                  <select
+                    name="dismissedBatter"
+                    value={eventForm.dismissedBatter}
+                    onChange={handleEventChange}
+                  >
+                    <option value="striker">Striker</option>
+                    <option value="non-striker">Non-Striker</option>
+                  </select>
+                </label>
 
-              <button type="submit" className="secondary-button" disabled={isUpdating}>
-                Add Event
-              </button>
-            </form>
+                <label className="field-group">
+                  <span>Runs On Wicket Ball</span>
+                  <input
+                    type="number"
+                    name="runs"
+                    min="0"
+                    max="6"
+                    value={eventForm.runs}
+                    onChange={handleEventChange}
+                    placeholder="0 for normal wicket"
+                  />
+                </label>
+
+                <label className="field-group">
+                  <span>Next Batter</span>
+                  <input
+                    type="text"
+                    name="nextBatter"
+                    list="live-score-batters"
+                    value={eventForm.nextBatter}
+                    onChange={handleEventChange}
+                    placeholder="Who comes in next?"
+                  />
+                </label>
+
+                <label className="field-group">
+                  <span>Fielder</span>
+                  <input
+                    type="text"
+                    name="fielder"
+                    list="live-score-batters"
+                    value={eventForm.fielder}
+                    onChange={handleEventChange}
+                    placeholder="Optional"
+                  />
+                </label>
+
+                <label className="field-group">
+                  <span>Description</span>
+                  <input
+                    type="text"
+                    name="description"
+                    value={eventForm.description}
+                    onChange={handleEventChange}
+                    placeholder="Optional wicket note"
+                  />
+                </label>
+
+                {eventForm.runs > 0 ? (
+                  <p className="form-error">
+                    Use wicket runs for cases like run out after completed runs.
+                  </p>
+                ) : null}
+
+                <button type="submit" className="danger-button" disabled={isUpdating || needsNewBowler}>
+                  Confirm Wicket
+                </button>
+              </form>
+            ) : null}
+
+            {showAdvancedScoring && eventForm.type !== "wicket" ? (
+              <form className="event-grid" onSubmit={handleEventSubmit}>
+                <label className="field-group">
+                  <span>Manual Event</span>
+                  <select
+                    name="type"
+                    value={eventForm.type}
+                    onChange={handleEventChange}
+                  >
+                    <option value="run">Run</option>
+                    <option value="wide">Wide</option>
+                    <option value="noBall">No Ball</option>
+                    <option value="bye">Bye</option>
+                    <option value="legBye">Leg Bye</option>
+                  </select>
+                </label>
+
+                <label className="field-group">
+                  <span>
+                    {eventForm.type === "wide" || eventForm.type === "noBall"
+                      ? "Additional Runs"
+                      : "Runs"}
+                  </span>
+                  <input
+                    type="number"
+                    name="runs"
+                    min="0"
+                    max="6"
+                    value={eventForm.runs}
+                    onChange={handleEventChange}
+                  />
+                </label>
+
+                <button type="submit" className="secondary-button" disabled={isUpdating || needsNewBowler}>
+                  Add Manual Event
+                </button>
+              </form>
+            ) : null}
+            <datalist id="live-score-batters">
+              {batterOptions.map((playerName) => (
+                <option key={playerName} value={playerName} />
+              ))}
+            </datalist>
+            <datalist id="live-score-bowlers">
+              {bowlerOptions.map((playerName) => (
+                <option key={playerName} value={playerName} />
+              ))}
+            </datalist>
           </section>
         ) : null}
 
@@ -454,8 +726,10 @@ function LiveScorePage({ mode = "viewer" }) {
                 <input
                   type="text"
                   name="striker"
+                  list="live-second-innings-batters"
                   value={secondInningsForm.striker}
                   onChange={handleSecondInningsChange}
+                  placeholder="Select or type striker"
                 />
               </label>
               <label className="field-group">
@@ -463,8 +737,10 @@ function LiveScorePage({ mode = "viewer" }) {
                 <input
                   type="text"
                   name="nonStriker"
+                  list="live-second-innings-batters"
                   value={secondInningsForm.nonStriker}
                   onChange={handleSecondInningsChange}
+                  placeholder="Select or type non-striker"
                 />
               </label>
               <label className="field-group">
@@ -472,14 +748,26 @@ function LiveScorePage({ mode = "viewer" }) {
                 <input
                   type="text"
                   name="bowler"
+                  list="live-second-innings-bowlers"
                   value={secondInningsForm.bowler}
                   onChange={handleSecondInningsChange}
+                  placeholder="Select or type bowler"
                 />
               </label>
               <button type="submit" className="primary-button" disabled={isUpdating}>
                 Start Chase
               </button>
             </form>
+            <datalist id="live-second-innings-batters">
+              {secondInningsBatters.map((playerName) => (
+                <option key={playerName} value={playerName} />
+              ))}
+            </datalist>
+            <datalist id="live-second-innings-bowlers">
+              {secondInningsBowlers.map((playerName) => (
+                <option key={playerName} value={playerName} />
+              ))}
+            </datalist>
           </section>
         ) : null}
 

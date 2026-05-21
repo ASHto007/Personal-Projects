@@ -1,11 +1,16 @@
 import { Outlet } from "react-router-dom";
 import { useEffect, useState } from "react";
 import {
+  addTournamentTeams,
   createTournament,
+  createTournamentGroups,
   listTournaments,
+  startTournamentSchedule,
+  updateTournamentAwards,
+  updateTournamentTeamSquad,
   updateFixtureResult,
 } from "../services/tournamentService";
-import tournamentHero from "../assets/tournament-hero.svg";
+import tournamentHero from "../assets/tournament-hero.png";
 import RoleNav from "../components/RoleNav";
 import TournamentTabs from "../components/tournament/TournamentTabs";
 
@@ -27,11 +32,22 @@ function TournamentPage({ mode = "viewer" }) {
   const [formData, setFormData] = useState({
     name: "",
     format: "ODI",
+    overs: "50",
     venue: "",
     startDate: "",
+    endDate: "",
     logoUrl: "",
+  });
+  const [groupSetup, setGroupSetup] = useState({
     groupCount: 2,
+    groupNames: "Group A, Group B",
+  });
+  const [teamSetup, setTeamSetup] = useState({
     teams: "",
+  });
+  const [squadSetup, setSquadSetup] = useState({
+    teamId: "",
+    players: "",
   });
   const [isSaving, setIsSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -77,7 +93,34 @@ function TournamentPage({ mode = "viewer" }) {
 
     setFormData((currentValue) => ({
       ...currentValue,
+      [name]: value,
+    }));
+  }
+
+  function handleGroupSetupChange(event) {
+    const { name, value } = event.target;
+
+    setGroupSetup((currentValue) => ({
+      ...currentValue,
       [name]: name === "groupCount" ? Number(value) : value,
+    }));
+  }
+
+  function handleTeamSetupChange(event) {
+    const { name, value } = event.target;
+
+    setTeamSetup((currentValue) => ({
+      ...currentValue,
+      [name]: value,
+    }));
+  }
+
+  function handleSquadSetupChange(event) {
+    const { name, value } = event.target;
+
+    setSquadSetup((currentValue) => ({
+      ...currentValue,
+      [name]: value,
     }));
   }
 
@@ -87,22 +130,23 @@ function TournamentPage({ mode = "viewer" }) {
     setIsSaving(true);
 
     try {
-      const payload = {
-        ...formData,
-        teams: formData.teams.split(","),
-      };
-
-      const response = await createTournament(payload);
+      const response = await createTournament(formData);
       setTournaments([response]);
       setFormData({
         name: "",
         format: "ODI",
+        overs: "50",
         venue: "",
         startDate: "",
+        endDate: "",
         logoUrl: "",
-        groupCount: 2,
-        teams: "",
       });
+      setGroupSetup({
+        groupCount: 2,
+        groupNames: "Group A, Group B",
+      });
+      setTeamSetup({ teams: "" });
+      setSquadSetup({ teamId: "", players: "" });
     } catch (error) {
       setErrorMessage(error.message || "Unable to create tournament.");
     } finally {
@@ -121,6 +165,83 @@ function TournamentPage({ mode = "viewer" }) {
     }
   }
 
+  async function handleCreateGroups(tournamentId) {
+    setErrorMessage("");
+
+    try {
+      const updatedTournament = await createTournamentGroups(tournamentId, {
+        groupCount: groupSetup.groupCount,
+        groupNames: groupSetup.groupNames.split(","),
+      });
+      setTournaments([updatedTournament]);
+      setSquadSetup((currentValue) => ({
+        ...currentValue,
+        teamId: updatedTournament.teams[0]?.id || currentValue.teamId,
+      }));
+    } catch (error) {
+      setErrorMessage(error.message || "Unable to create groups.");
+    }
+  }
+
+  async function handleAddTeams(tournamentId) {
+    setErrorMessage("");
+
+    try {
+      const updatedTournament = await addTournamentTeams(tournamentId, {
+        teams: teamSetup.teams.split(","),
+      });
+      setTournaments([updatedTournament]);
+      setTeamSetup({ teams: "" });
+      setSquadSetup((currentValue) => ({
+        ...currentValue,
+        teamId: updatedTournament.teams[0]?.id || currentValue.teamId,
+      }));
+    } catch (error) {
+      setErrorMessage(error.message || "Unable to add teams.");
+    }
+  }
+
+  async function handleStartSchedule(tournamentId) {
+    setErrorMessage("");
+
+    try {
+      const updatedTournament = await startTournamentSchedule(tournamentId);
+      setTournaments([updatedTournament]);
+    } catch (error) {
+      setErrorMessage(error.message || "Unable to start match schedule.");
+    }
+  }
+
+  async function handleUpdateTeamSquad(tournamentId) {
+    setErrorMessage("");
+
+    try {
+      const updatedTournament = await updateTournamentTeamSquad(
+        tournamentId,
+        squadSetup.teamId,
+        { players: squadSetup.players.split(",") },
+      );
+      setTournaments([updatedTournament]);
+      setSquadSetup((currentValue) => ({
+        ...currentValue,
+        players: "",
+      }));
+    } catch (error) {
+      setErrorMessage(error.message || "Unable to update team players.");
+    }
+  }
+
+  async function handleTournamentAwards(tournamentId, payload) {
+    setErrorMessage("");
+
+    try {
+      const updatedTournament = await updateTournamentAwards(tournamentId, payload);
+      setTournaments([updatedTournament]);
+    } catch (error) {
+      setErrorMessage(error.message || "Unable to update tournament awards.");
+    }
+  }
+
   return (
     <main className="app-shell">
       <div className="app-frame">
@@ -130,17 +251,18 @@ function TournamentPage({ mode = "viewer" }) {
           <div className="hero-layout">
             <div className="hero-copy">
               <span className="eyebrow">{isAdmin ? "Tournament Admin" : "Tournament Center"}</span>
-              <h1>{selectedTournament ? selectedTournament.name : "International Tournament Desk"}</h1>
+              <h1>{selectedTournament ? selectedTournament.name : "Tournament Center"}</h1>
               <p>
                 {isAdmin
-                  ? "Operate one official tournament with auto-generated group fixtures, results, squads, schedule, and points tables."
-                  : "Follow the official tournament schedule, group standings, squads, results, and match feed."}
+                  ? "Create the tournament once, then manage teams, groups, fixtures, squads, and results from a single place."
+                  : "Follow the schedule, standings, squads, results, and match progress from one simple tournament view."}
               </p>
               <div className="hero-meta">
                 <span>{selectedTournament?.format || "Format TBA"}</span>
+                <span>{selectedTournament?.overs ? `${selectedTournament.overs} overs` : "Overs TBA"}</span>
                 <span>{selectedTournament?.venue || "Venue TBA"}</span>
-                <span>{formatDisplayDate(selectedTournament?.startDate)}</span>
-                <span>{isAdmin ? "Refresh 12s" : "Refresh 18s"}</span>
+                <span>{selectedTournament ? `${formatDisplayDate(selectedTournament?.startDate)} to ${formatDisplayDate(selectedTournament?.endDate)}` : "Dates not set"}</span>
+                <span>{isAdmin ? "Auto refresh: 12s" : "Auto refresh: 18s"}</span>
               </div>
             </div>
 
@@ -178,8 +300,10 @@ function TournamentPage({ mode = "viewer" }) {
               <h3>{selectedTournament.name}</h3>
               <div className="identity-meta">
                 <span>{selectedTournament.format}</span>
+                <span>{selectedTournament.overs} overs</span>
                 <span>{selectedTournament.teams.length} teams</span>
                 <span>{selectedTournament.groups.length} groups</span>
+                <span>{selectedTournament.fixtures.length} fixtures</span>
                 <span>{selectedTournament.status}</span>
               </div>
             </section>
@@ -208,18 +332,63 @@ function TournamentPage({ mode = "viewer" }) {
           </section>
         ) : null}
 
+        {isAdmin ? (
+          <section className="sidebar-card helper-card">
+            <div className="section-toolbar">
+              <div>
+                <h3>Tournament Setup Flow</h3>
+                <p>Use this order to avoid missing any setup step.</p>
+              </div>
+            </div>
+            <div className="helper-grid">
+              <div className="helper-item">
+                <span className="helper-step">1</span>
+                <div>
+                  <strong>Create the tournament</strong>
+                  <p>Enter name, format, dates, and venue first.</p>
+                </div>
+              </div>
+              <div className="helper-item">
+                <span className="helper-step">2</span>
+                <div>
+                  <strong>Add groups and teams</strong>
+                  <p>Set group names, then add the teams that belong in the event.</p>
+                </div>
+              </div>
+              <div className="helper-item">
+                <span className="helper-step">3</span>
+                <div>
+                  <strong>Fill squads and start schedule</strong>
+                  <p>Update player lists, then generate or begin the schedule.</p>
+                </div>
+              </div>
+            </div>
+          </section>
+        ) : null}
+
         <Outlet
           context={{
             canCreateTournament,
             errorMessage,
             formatDisplayDate,
             formData,
+            groupSetup,
             handleChange,
+            handleAddTeams,
+            handleCreateGroups,
             handleFixtureResult,
+            handleGroupSetupChange,
+            handleSquadSetupChange,
+            handleTeamSetupChange,
+            handleStartSchedule,
             handleSubmit,
+            handleTournamentAwards,
+            handleUpdateTeamSquad,
             isAdmin,
             isSaving,
             selectedTournament,
+            squadSetup,
+            teamSetup,
           }}
         />
 

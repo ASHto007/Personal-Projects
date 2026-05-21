@@ -80,7 +80,7 @@ function getDefaultGroupCount(teamCount) {
   return 1;
 }
 
-function createGroups(teams, requestedGroupCount) {
+function createGroups(teams, requestedGroupCount, requestedGroupNames = []) {
   const groupCount = Math.max(
     1,
     Math.min(Number(requestedGroupCount) || getDefaultGroupCount(teams.length), teams.length)
@@ -88,7 +88,9 @@ function createGroups(teams, requestedGroupCount) {
 
   const groups = Array.from({ length: groupCount }, (_, index) => ({
     id: `group_${index + 1}`,
-    name: `Group ${String.fromCharCode(65 + index)}`,
+    name:
+      String(requestedGroupNames[index] || "").trim() ||
+      `Group ${String.fromCharCode(65 + index)}`,
     teams: [],
   }));
 
@@ -153,8 +155,30 @@ function addDays(dateString, daysToAdd) {
   return baseDate.toISOString().split("T")[0];
 }
 
-function createTournamentFixtures(groups, venue, startDate) {
-  const fixtures = [];
+function getDatesBetween(startDate, endDate) {
+  if (!startDate) {
+    return [new Date().toISOString().split("T")[0]];
+  }
+
+  if (!endDate || endDate <= startDate) {
+    return [startDate];
+  }
+
+  const dates = [];
+  let dayOffset = 0;
+  let currentDate = startDate;
+
+  while (currentDate <= endDate) {
+    dates.push(currentDate);
+    dayOffset += 1;
+    currentDate = addDays(startDate, dayOffset);
+  }
+
+  return dates;
+}
+
+function createTournamentFixtures(groups, venue, startDate, endDate = "") {
+  const baseFixtures = [];
 
   groups.forEach((group) => {
     const groupFixtures = createRoundRobinFixtures(group.teams, {
@@ -165,15 +189,19 @@ function createTournamentFixtures(groups, venue, startDate) {
     });
 
     groupFixtures.forEach((fixture) => {
-      fixtures.push({
+      baseFixtures.push({
         ...fixture,
-        matchNumber: fixtures.length + 1,
-        date: addDays(startDate, fixtures.length),
+        matchNumber: baseFixtures.length + 1,
       });
     });
   });
 
-  return fixtures;
+  const availableDates = getDatesBetween(startDate, endDate);
+
+  return baseFixtures.map((fixture, index) => ({
+    ...fixture,
+    date: availableDates[index % availableDates.length],
+  }));
 }
 
 function createEmptyStanding(team) {
@@ -317,11 +345,14 @@ function buildTournamentStats(tournament, groupStandings) {
 }
 
 module.exports = {
+  buildShortName,
   buildTournamentStats,
   buildViewerMatches,
   calculateGroupStandings,
   calculateOverallStandings,
+  createDefaultSquad,
   createGroups,
   createTournamentFixtures,
+  slugify,
   sanitizeTeams,
 };

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useOutletContext, useParams } from "react-router-dom";
 import { getCurrentMatch, getRecentMatches } from "../../services/matchService";
 import {
@@ -18,35 +18,18 @@ function TournamentMatchDetails() {
   const { fixtureId } = useParams();
   const { formatDisplayDate, isAdmin, selectedTournament } = useOutletContext();
   const [relatedMatch, setRelatedMatch] = useState(null);
-
-  if (!selectedTournament) {
-    return <TournamentEmptyState isAdmin={isAdmin} />;
-  }
-
-  const fixture = selectedTournament.schedule.find((item) => item.id === fixtureId);
-
-  if (!fixture) {
-    return (
-      <section className="sidebar-card">
-        <h3>Match Not Found</h3>
-        <p>This match is not available in the current tournament.</p>
-        <Link
-          to={isAdmin ? "/admin/tournaments/schedule" : "/tournaments/schedule"}
-          className="secondary-link"
-        >
-          Back To Schedule
-        </Link>
-      </section>
-    );
-  }
-
-  const teamA = selectedTournament.teams.find((team) => team.id === fixture.teamAId);
-  const teamB = selectedTournament.teams.find((team) => team.id === fixture.teamBId);
+  const fixture = selectedTournament?.schedule?.find((item) => item.id === fixtureId) || null;
+  const teamA = selectedTournament?.teams?.find((team) => team.id === fixture?.teamAId) || null;
+  const teamB = selectedTournament?.teams?.find((team) => team.id === fixture?.teamBId) || null;
   const backPath = isAdmin ? "/admin/tournaments/schedule" : "/tournaments/schedule";
-  const fixtureTeamNames = [fixture.teamA, fixture.teamB].sort().join("|");
-  const storedMatchData = fixture.matchRef?.matchData || null;
+  const fixtureTeamNames = fixture ? [fixture.teamA, fixture.teamB].sort().join("|") : "";
+  const storedMatchData = fixture?.matchRef?.matchData || null;
 
   useEffect(() => {
+    if (!fixture) {
+      return undefined;
+    }
+
     let isMounted = true;
 
     async function loadRelatedMatch() {
@@ -96,27 +79,41 @@ function TournamentMatchDetails() {
     return () => {
       isMounted = false;
     };
-  }, [fixtureTeamNames, storedMatchData]);
+  }, [fixture, fixtureTeamNames, storedMatchData]);
 
-  const relatedMatchScore = useMemo(() => {
-    if (!relatedMatch?.innings?.length) {
-      return null;
-    }
+  const relatedMatchScore = !fixture || !relatedMatch?.innings?.length
+    ? null
+    : (() => {
+        const teamAInnings = relatedMatch.innings.find((innings) => innings.battingTeam === fixture.teamA);
+        const teamBInnings = relatedMatch.innings.find((innings) => innings.battingTeam === fixture.teamB);
 
-    const teamAInnings = relatedMatch.innings.find((innings) => innings.battingTeam === fixture.teamA);
-    const teamBInnings = relatedMatch.innings.find((innings) => innings.battingTeam === fixture.teamB);
+        return {
+          status: relatedMatch.status,
+          result: relatedMatch.result,
+          teamALine: teamAInnings
+            ? `${teamAInnings.score.runs}/${teamAInnings.score.wickets} (${teamAInnings.score.overs})`
+            : "Yet to bat",
+          teamBLine: teamBInnings
+            ? `${teamBInnings.score.runs}/${teamBInnings.score.wickets} (${teamBInnings.score.overs})`
+            : "Yet to bat",
+        };
+      })();
 
-    return {
-      status: relatedMatch.status,
-      result: relatedMatch.result,
-      teamALine: teamAInnings
-        ? `${teamAInnings.score.runs}/${teamAInnings.score.wickets} (${teamAInnings.score.overs})`
-        : "Yet to bat",
-      teamBLine: teamBInnings
-        ? `${teamBInnings.score.runs}/${teamBInnings.score.wickets} (${teamBInnings.score.overs})`
-        : "Yet to bat",
-    };
-  }, [fixture.teamA, fixture.teamB, relatedMatch]);
+  if (!selectedTournament) {
+    return <TournamentEmptyState isAdmin={isAdmin} />;
+  }
+
+  if (!fixture) {
+    return (
+      <section className="sidebar-card">
+        <h3>Match Not Found</h3>
+        <p>This match is not available in the current tournament.</p>
+        <Link to={backPath} className="secondary-link">
+          Back To Schedule
+        </Link>
+      </section>
+    );
+  }
 
   const fixtureScore = {
     teamALine: fixture.result?.teamAScore || "Score not available",
@@ -306,6 +303,12 @@ function TournamentMatchDetails() {
                 <div className="table-row">
                   <span>Winner</span>
                   <span>{fixture.result.winner}</span>
+                </div>
+              ) : null}
+              {fixture.result?.manOfTheMatch || relatedMatch?.manOfTheMatch ? (
+                <div className="table-row">
+                  <span>Man Of The Match</span>
+                  <span>{fixture.result?.manOfTheMatch || relatedMatch?.manOfTheMatch}</span>
                 </div>
               ) : null}
               {relatedMatchScore ? (

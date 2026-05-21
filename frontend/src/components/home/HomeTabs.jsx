@@ -2,10 +2,10 @@ import { NavLink } from "react-router-dom";
 
 function HomeTabs() {
   const links = [
-    { to: "/home/overview", label: "Overview" },
-    { to: "/home/tournament", label: "Tournament" },
-    { to: "/home/match", label: "Match" },
-    { to: "/home/results", label: "Results" },
+    { to: "/home/overview", label: "Quick View" },
+    { to: "/home/tournament", label: "Tournament View" },
+    { to: "/home/match", label: "Match View" },
+    { to: "/home/results", label: "Recent Results" },
   ];
 
   return (

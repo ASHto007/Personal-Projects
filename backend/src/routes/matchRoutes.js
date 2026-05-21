@@ -7,6 +7,7 @@ const {
   getRecentMatchResults,
   startSecondInnings,
   undoLastBall,
+  updateCurrentMatchAward,
   updateCurrentMatchPlayers,
   updateCurrentMatchScore,
 } = require("../controllers/matchController");
@@ -18,8 +19,10 @@ router.get("/current", getCurrentMatchDetails);
 router.get("/recent", getRecentMatchResults);
 router.post("/current/innings/complete", completeCurrentInnings);
 router.post("/current/innings/start-second", startSecondInnings);
+router.patch("/current/award", updateCurrentMatchAward);
 router.patch("/current/players", updateCurrentMatchPlayers);
 router.patch("/current/score", updateCurrentMatchScore);
+router.post("/current/score/undo", undoLastBall);
 router.post("/current/score/undo", undoLastBall);
 
 module.exports = router;

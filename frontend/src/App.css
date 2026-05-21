@@ -393,6 +393,66 @@
   box-shadow: 0 12px 30px rgba(10, 42, 72, 0.08);
 }
 
+.quick-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.quick-guide-card {
+  display: grid;
+  gap: 10px;
+  align-content: start;
+}
+
+.quick-guide-card strong {
+  color: #12304f;
+  font-size: 1.05rem;
+}
+
+.helper-card {
+  display: grid;
+  gap: 18px;
+}
+
+.helper-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.helper-item {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 12px;
+  align-items: start;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(247, 250, 252, 0.9);
+  border: 1px solid rgba(14, 53, 90, 0.08);
+}
+
+.helper-item strong {
+  color: #12304f;
+}
+
+.helper-item p {
+  margin: 4px 0 0;
+}
+
+.helper-step {
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #0f4c81, #0a7a5b);
+  color: #ffffff;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
 .feature-card {
   position: relative;
   overflow: hidden;
@@ -741,6 +801,27 @@
   margin-top: 18px;
 }
 
+.form-section + .form-section {
+  margin-top: 22px;
+}
+
+.form-section .form-grid {
+  margin-top: 12px;
+}
+
+.match-setup-helper {
+  margin-top: 22px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+}
+
+.tournament-result-form,
+.tournament-awards-form {
+  margin-top: 16px;
+}
+
 .field-group {
   display: grid;
   gap: 8px;
@@ -1035,6 +1116,41 @@
   flex-wrap: wrap;
   gap: 12px;
   margin-top: 18px;
+}
+
+.scoring-stack {
+  display: grid;
+  gap: 16px;
+  margin-top: 18px;
+}
+
+.scoring-label {
+  margin: 0 0 10px;
+  color: #4f6378;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.quick-score-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.wicket-console {
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(180, 35, 24, 0.05);
+  border: 1px solid rgba(180, 35, 24, 0.12);
+}
+
+.extra-console {
+  padding: 16px 18px;
+  border-radius: 18px;
+  background: rgba(15, 76, 129, 0.05);
+  border: 1px solid rgba(15, 76, 129, 0.1);
 }
 
 .match-center-stack {
@@ -1467,6 +1583,8 @@
   .hero-layout,
   .tournament-summary-grid,
   .home-grid,
+  .quick-guide-grid,
+  .helper-grid,
   .recent-results-grid,
   .search-results-grid {
     grid-template-columns: 1fr;
@@ -1516,6 +1634,7 @@
 
   .player-grid,
   .event-grid,
+  .quick-score-grid,
   .home-live-insights,
   .progress-metrics,
   .score-summary-grid,

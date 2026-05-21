@@ -8,7 +8,7 @@ function TournamentCreateForm({
   return (
     <form className="sidebar-card" onSubmit={onSubmit}>
       <h3>Create Official Tournament</h3>
-      <p>Only one active tournament is allowed. Fixtures are generated automatically by group.</p>
+      <p>Only one active tournament is allowed. Create the tournament first, then set groups and schedule inside admin.</p>
       <div className="form-grid">
         <label className="field-group">
           <span>Tournament Name</span>
@@ -28,6 +28,18 @@ function TournamentCreateForm({
             <option value="T20">T20</option>
             <option value="Test">Test</option>
           </select>
+        </label>
+
+        <label className="field-group">
+          <span>Overs In Tournament Match</span>
+          <input
+            type="number"
+            name="overs"
+            min="1"
+            value={formData.overs}
+            onChange={onChange}
+            placeholder="50"
+          />
         </label>
 
         <label className="field-group">
@@ -52,12 +64,13 @@ function TournamentCreateForm({
         </label>
 
         <label className="field-group">
-          <span>Groups</span>
-          <select name="groupCount" value={formData.groupCount} onChange={onChange}>
-            <option value={1}>1 Group</option>
-            <option value={2}>2 Groups</option>
-            <option value={4}>4 Groups</option>
-          </select>
+          <span>End Date</span>
+          <input
+            type="date"
+            name="endDate"
+            value={formData.endDate}
+            onChange={onChange}
+          />
         </label>
 
         <label className="field-group">
@@ -71,16 +84,6 @@ function TournamentCreateForm({
           />
         </label>
 
-        <label className="field-group tournament-field">
-          <span>Teams</span>
-          <input
-            type="text"
-            name="teams"
-            value={formData.teams}
-            onChange={onChange}
-            placeholder="India, Australia, England, South Africa, Pakistan, New Zealand, Sri Lanka, Bangladesh"
-          />
-        </label>
       </div>
 
       {errorMessage ? <p className="form-error">{errorMessage}</p> : null}

@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link, Outlet } from "react-router-dom";
+import homeDashboardHero from "../assets/home-dashboard-hero.png";
 import { getCurrentMatch, getRecentMatches } from "../services/matchService";
 import { listTournaments } from "../services/tournamentService";
 import RoleNav from "../components/RoleNav";
@@ -155,6 +156,26 @@ function HomePage({ mode = "viewer" }) {
     Boolean(currentMatch && currentInnings) && currentMatch.status !== "completed";
   const upcomingFixtures = getUpcomingFixtures(currentTournament).slice(0, 3);
   const hasLiveContent = Boolean(currentTournament || isLiveMatchActive || upcomingFixtures.length);
+  const summaryStats = [
+    {
+      label: "Live match",
+      value: isLiveMatchActive
+        ? `${currentMatch.teamOne} vs ${currentMatch.teamTwo}`
+        : "No live match",
+    },
+    {
+      label: "Current tournament",
+      value: currentTournament?.name || "No active tournament",
+    },
+    {
+      label: "Upcoming fixtures",
+      value: String(upcomingFixtures.length),
+    },
+    {
+      label: "Recent results",
+      value: String(recentMatches.length),
+    },
+  ];
   const normalizedSearchQuery = normalizeSearchValue(searchQuery);
   const searchResults = useMemo(() => {
     if (!normalizedSearchQuery) {
@@ -260,19 +281,97 @@ function HomePage({ mode = "viewer" }) {
         <RoleNav role={mode} />
 
         <section className="hero-panel">
-          <div className="hero-copy">
-            <span className="eyebrow">FieldPulse Cricket</span>
-            <h1>Today&apos;s Cricket Center</h1>
-            <p>Track the live match, tournament activity, and recent results.</p>
-            <label className="home-search-bar">
-              <span>Search tournaments or matches</span>
-              <input
-                type="search"
-                value={searchQuery}
-                onChange={(event) => setSearchQuery(event.target.value)}
-                placeholder="Search team, tournament, or fixture"
+          <div className="hero-layout">
+            <div className="hero-copy">
+              <span className="eyebrow">FieldPulse Cricket</span>
+              <h1>Cricket Dashboard Made Simple</h1>
+              <p>
+                Start here to see the live match, upcoming tournament fixtures, and recent
+                results without jumping between pages.
+              </p>
+              <div className="hero-meta">
+                <span>1. Check live score</span>
+                <span>2. Open tournament</span>
+                <span>3. Review recent results</span>
+              </div>
+              <label className="home-search-bar">
+                <span>Find a team, tournament, or fixture</span>
+                <input
+                  type="search"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  placeholder="Example: India, Group A, Mumbai, T20"
+                />
+              </label>
+            </div>
+
+            <div className="hero-visual-panel">
+              <img
+                src={homeDashboardHero}
+                alt="Cricket dashboard illustration with live score and tournament tracking"
+                className="hero-illustration"
               />
-            </label>
+              <div className="hero-floating-card">
+                <div className="floating-card-mark floating-mark-placeholder">FP</div>
+                <div>
+                  <strong>{isLiveMatchActive ? "Match day live" : "Ready for the next game"}</strong>
+                  <span>
+                    {currentTournament
+                      ? `${currentTournament.name} ${upcomingFixtures.length ? `| ${upcomingFixtures.length} upcoming` : "| fixtures ready"}`
+                      : "Follow score, schedule, and results from one place"}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="quick-guide-grid">
+          {summaryStats.map((item) => (
+            <article key={item.label} className="sidebar-card quick-guide-card">
+              <span className="section-label">{item.label}</span>
+              <strong>{item.value}</strong>
+            </article>
+          ))}
+        </section>
+
+        <section className="sidebar-card helper-card">
+          <div className="section-toolbar">
+            <div>
+              <h3>How To Use This Dashboard</h3>
+              <p>Choose the section that matches what you want to follow right now.</p>
+            </div>
+            <div className="action-row">
+              <Link to="/live-score/summary" className="primary-link">
+                Open Live Score
+              </Link>
+              <Link to="/tournaments" className="secondary-link">
+                Open Tournament
+              </Link>
+            </div>
+          </div>
+          <div className="helper-grid">
+            <div className="helper-item">
+              <span className="helper-step">1</span>
+              <div>
+                <strong>Quick View</strong>
+                <p>See the most important live and tournament updates in one place.</p>
+              </div>
+            </div>
+            <div className="helper-item">
+              <span className="helper-step">2</span>
+              <div>
+                <strong>Match View</strong>
+                <p>Follow the current match and the next fixtures.</p>
+              </div>
+            </div>
+            <div className="helper-item">
+              <span className="helper-step">3</span>
+              <div>
+                <strong>Recent Results</strong>
+                <p>Review finished matches without opening the scoring desk.</p>
+              </div>
+            </div>
           </div>
         </section>
 

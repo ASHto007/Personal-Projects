@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import {
   getBatterEntry,
@@ -11,7 +12,8 @@ import {
 } from "./matchCenterUtils";
 
 function MatchSummaryTab() {
-  const { actionError, currentInnings, displayInnings, isAdmin, match } = useOutletContext();
+  const { actionError, currentInnings, displayInnings, handleMatchAward, isAdmin, match } = useOutletContext();
+  const [localAwardDraft, setLocalAwardDraft] = useState("");
 
   if (!match || !displayInnings) {
     return null;
@@ -24,6 +26,21 @@ function MatchSummaryTab() {
   const bowlerStats = getBowlerEntry(displayInnings, displayInnings.players.currentBowler);
   const requiredRate = getRequiredRate(match, currentInnings || displayInnings);
   const targetStatus = getTargetStatus(match, currentInnings || displayInnings);
+  const awardOptions = Array.from(
+    new Set(
+      [
+        ...(match.teamSquads?.[match.teamOne] || []),
+        ...(match.teamSquads?.[match.teamTwo] || []),
+        ...((match.innings || []).flatMap((innings) => [
+          ...(innings.battingCard || []).map((player) => player.name),
+          ...(innings.bowlingCard || []).map((player) => player.name),
+        ])),
+      ]
+        .map((value) => String(value || "").trim())
+        .filter(Boolean),
+    ),
+  );
+  const resolvedAwardDraft = localAwardDraft || match.manOfTheMatch || "";
 
   return (
     <div className="match-center-stack">
@@ -149,6 +166,12 @@ function MatchSummaryTab() {
                 <span>{match.result}</span>
               </div>
             ) : null}
+            {match.manOfTheMatch ? (
+              <div className="table-row">
+                <span>Man Of The Match</span>
+                <span>{match.manOfTheMatch}</span>
+              </div>
+            ) : null}
           </div>
         </section>
 
@@ -194,11 +217,38 @@ function MatchSummaryTab() {
                   {match.status === "innings-break"
                     ? "Start second innings"
                     : match.status === "completed"
-                    ? "Match completed"
+                    ? "Choose man of the match"
                     : "Use console below to score"}
                 </span>
               </div>
             </div>
+            {match.status === "completed" ? (
+              <form
+                className="event-grid tournament-awards-form"
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  await handleMatchAward(resolvedAwardDraft);
+                }}
+              >
+                <label className="field-group">
+                  <span>Man Of The Match</span>
+                  <select
+                    value={resolvedAwardDraft}
+                    onChange={(event) => setLocalAwardDraft(event.target.value)}
+                  >
+                    <option value="">Select player</option>
+                    {awardOptions.map((playerName) => (
+                      <option key={playerName} value={playerName}>
+                        {playerName}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button type="submit" className="primary-button" disabled={!resolvedAwardDraft}>
+                  Save Man Of The Match
+                </button>
+              </form>
+            ) : null}
           </section>
         ) : (
           <section className="sidebar-card">

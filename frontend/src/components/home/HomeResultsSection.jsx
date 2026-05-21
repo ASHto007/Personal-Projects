@@ -29,6 +29,11 @@ function HomeResultsSection() {
                   <strong>{getTeamScoreLine(matchItem, matchItem.teamTwo)}</strong>
                 </div>
               </div>
+              {matchItem.manOfTheMatch ? (
+                <p className="fixture-result-text">
+                  Man of the match: <strong>{matchItem.manOfTheMatch}</strong>
+                </p>
+              ) : null}
             </div>
             <div className="recent-result-meta">
               <span className="recent-result-badge">

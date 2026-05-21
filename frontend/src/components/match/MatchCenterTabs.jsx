@@ -4,11 +4,11 @@ function MatchCenterTabs({ mode }) {
   const basePath = mode === "admin" ? "/admin/live-score" : "/live-score";
 
   const links = [
-    { to: `${basePath}/summary`, label: "Summary" },
-    { to: `${basePath}/scorecard`, label: "Scorecard" },
-    { to: `${basePath}/commentary`, label: "Commentary" },
-    { to: `${basePath}/stats`, label: "Stats" },
-    { to: `${basePath}/search`, label: "Search" },
+    { to: `${basePath}/summary`, label: "Live Summary" },
+    { to: `${basePath}/scorecard`, label: "Full Scorecard" },
+    { to: `${basePath}/commentary`, label: "Ball By Ball" },
+    { to: `${basePath}/stats`, label: "Key Stats" },
+    { to: `${basePath}/search`, label: "Player Search" },
   ];
 
   return (

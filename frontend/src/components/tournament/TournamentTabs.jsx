@@ -4,12 +4,12 @@ function TournamentTabs({ mode }) {
   const basePath = mode === "admin" ? "/admin/tournaments" : "/tournaments";
 
   const links = [
-    { to: basePath, label: "Overview", end: true },
-    { to: `${basePath}/schedule`, label: "Schedule" },
-    { to: `${basePath}/standings`, label: "Point Table" },
-    { to: `${basePath}/results`, label: "Results" },
-    { to: `${basePath}/squads`, label: "Squads" },
-    { to: `${basePath}/stats`, label: "Stats" },
+    { to: basePath, label: "Summary", end: true },
+    { to: `${basePath}/schedule`, label: "Match Schedule" },
+    { to: `${basePath}/standings`, label: "Standings" },
+    { to: `${basePath}/results`, label: "Match Results" },
+    { to: `${basePath}/squads`, label: "Team Squads" },
+    { to: `${basePath}/stats`, label: "Tournament Stats" },
   ];
 
   return (

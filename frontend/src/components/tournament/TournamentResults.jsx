@@ -57,6 +57,11 @@ function TournamentResults() {
                 {fixture.teamA} vs {fixture.teamB}
               </div>
               <p className="fixture-result-text">{fixture.result?.summary}</p>
+              {fixture.result?.manOfTheMatch ? (
+                <p className="fixture-result-text">
+                  Man of the match: <strong>{fixture.result.manOfTheMatch}</strong>
+                </p>
+              ) : null}
               <div className="fixture-actions">
                 <Link to={`${detailsBasePath}/${fixture.id}`} className="secondary-link">
                   View Details

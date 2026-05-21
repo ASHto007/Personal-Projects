@@ -25,6 +25,11 @@ export async function updateCurrentMatchPlayers(payload) {
   return response.data.data;
 }
 
+export async function updateCurrentMatchAward(payload) {
+  const response = await apiClient.patch("/matches/current/award", payload);
+  return response.data.data;
+}
+
 export async function undoLastBall() {
   const response = await apiClient.post("/matches/current/score/undo");
   return response.data.data;
